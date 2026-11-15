@@ -1,0 +1,11 @@
+# Created on first run / by use. Never commit these:
+# they hold downloaded tools, your signing key and your patched files.
+/runtime/*
+!/runtime/libs/
+!/runtime/README.md
+/output/
+__pycache__/
+*.pyc
+# Game files do not belong in this repository.
+*.apk
+*.bin.e

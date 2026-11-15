@@ -1,0 +1,77 @@
+NieR Re[in]carnation Offline Patcher
+====================================
+
+Does step 4 of the private server guide (patching the APK and the content
+tables) on your own PC, without Google Colab or Google Drive.
+
+Everything it needs lives inside this folder. Nothing is installed on your PC.
+After the first run it works with no internet, so you can back up the whole
+folder and keep using it.
+
+YOU NEED
+  - Windows 10 or 11, 64-bit
+  - Internet for the first run only (about 85 MB of downloads)
+  - Your own copies of the game files (not included):
+        NieR Re[in]carnation 3.7.1.apk
+        20240404193219.bin.e
+
+HOW TO USE
+  1. Unzip this folder somewhere with a short path, for example C:\NierPatcher
+  2. Double-click "Start Patcher.bat". A page opens in your web browser.
+     (The black window must stay open while you use it.)
+  3. Section 1: click "Download what's missing" and wait for it to finish.
+  4. Section 2: choose the original APK, type your server's IP address
+     (the one from step 3 of the guide), click "Patch APK".
+     The ports are already set to the guide's defaults (8003, 8080, 3000).
+  5. Section 3: choose the original 20240404193219.bin.e, click
+     "Patch content tables". You only need to do this once.
+  6. Your files are in the "output" folder:
+        patched.apk            -> install on your phone or emulator
+        20240404193219.bin.e   -> copy into rein\assets\release
+
+WHEN YOUR IP CHANGES
+  Start the patcher, enter the new IP, click "Patch APK", install the new
+  patched.apk. APKs made by this folder are signed with the same key each
+  time, so the new one installs over the old one. An APK patched elsewhere
+  (for example on Colab) has to be uninstalled first.
+
+IF THE PATCHED GAME DOES NOT WORK
+  Section 4 ("Check an APK") inspects a patched APK and can compare it with
+  another one that works. It changes nothing. "Copy report" copies the result
+  so you can paste it to whoever is helping you. The report shows your
+  server's IP address.
+
+IF A DOWNLOAD FAILS
+  The window tells you which file and where to get it. Download it in a
+  browser, put it in runtime\downloads with the same name, and try again.
+
+WHAT IS IN THE FOLDER
+  Start Patcher.bat   the thing you run
+  app\                the patcher program
+  runtime\libs        bundled Python packages (pycryptodome, msgpack, lz4)
+  runtime\...         created on first run: Python, Java, Apktool, the APK
+                      signer, the patch scripts, your signing key
+  output\             your patched files
+
+SHARING THIS PATCHER
+  Share the project page or its original zip, not your used folder. A used folder contains your
+  patched APK (which has your server address in it) and your signing key.
+  If you do share a used folder, delete "output" and "runtime\keystore" first.
+  Never include the game's APK or .bin.e files.
+  The patcher itself stores no personal information and keeps no log files.
+
+OTHER SYSTEMS (Linux / macOS)
+  Install Python 3.10+, Java 17+, and: pip install pycryptodome msgpack lz4
+  Then run:  python3 app/patcher.py
+
+MORE INFORMATION
+  README.md, CREDITS.md and docs\HOW-IT-WORKS.md explain how the patcher
+  works, who made what, and that the code was written by an AI (Claude).
+
+CREDITS
+  All of the actual patching is done by the lunar-scripts project
+  (patch_apk.py, patch_masterdata.py) from the lunar-tear authors:
+      https://github.com/Walter-Sparrow/lunar-tear
+      https://gitlab.com/walter-sparrow-group/lunar-scripts
+  This patcher downloads those scripts and runs them unchanged.
+  Also uses Apktool, uber-apk-signer, Eclipse Temurin (Java) and Python.

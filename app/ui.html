@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>NieR Re[in]carnation Offline Patcher</title>
+<style>
+  :root {
+    --bg: #14151a; --panel: #1d1f27; --line: #2e313d; --text: #e8e6e1;
+    --muted: #9a9ca8; --accent: #c9b27c; --accent-ink: #1a1710;
+    --ok: #7fbf8e; --bad: #e08a7d; --field: #12131a;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text);
+         font: 15px/1.5 "Segoe UI", system-ui, sans-serif; }
+  main { max-width: 760px; margin: 0 auto; padding: 28px 20px 60px; }
+  h1 { font-size: 22px; font-weight: 600; margin: 0 0 2px; letter-spacing: .02em; }
+  .sub { color: var(--muted); margin: 0 0 22px; }
+  section { background: var(--panel); border: 1px solid var(--line); border-radius: 10px;
+            padding: 18px 20px; margin-bottom: 16px; }
+  h2 { font-size: 16px; font-weight: 600; margin: 0 0 4px; }
+  h2 .n { color: var(--accent); margin-right: 8px; }
+  .hint { color: var(--muted); font-size: 13.5px; margin: 0 0 14px; }
+  label { display: block; font-size: 13px; color: var(--muted); margin: 12px 0 4px; }
+  input[type=text] { width: 100%; background: var(--field); color: var(--text);
+         border: 1px solid var(--line); border-radius: 6px; padding: 9px 10px; font: inherit; }
+  input[type=text]:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
+  .row { display: flex; gap: 8px; align-items: center; }
+  .row input { flex: 1; min-width: 0; }
+  .ports { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  button { font: inherit; border-radius: 6px; padding: 9px 14px; cursor: pointer;
+           border: 1px solid var(--line); background: #272a35; color: var(--text); white-space: nowrap; }
+  button:hover:not(:disabled) { border-color: var(--accent); }
+  button.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); font-weight: 600; }
+  button:disabled { opacity: .45; cursor: default; }
+  .actions { margin-top: 16px; display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  ul.comp { list-style: none; padding: 0; margin: 0 0 4px; display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 6px 14px; }
+  ul.comp li::before { content: "\25CB"; margin-right: 8px; color: var(--muted); }
+  ul.comp li.ok::before { content: "\2713"; color: var(--ok); }
+  .file { background: var(--field); border: 1px dashed var(--line); border-radius: 6px; padding: 6px; }
+  .file.over { border-color: var(--accent); }
+  .fname { color: var(--muted); font-size: 13.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .fname.set { color: var(--text); }
+  .chips { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; align-items: center; font-size: 13px; color: var(--muted); }
+  .chips button { padding: 4px 10px; font-family: Consolas, monospace; font-size: 13px; }
+  .preview { font-family: Consolas, monospace; font-size: 13px; color: var(--muted); margin-top: 10px; }
+  .check { display: flex; align-items: center; gap: 8px; margin-top: 12px; color: var(--text); font-size: 14px; }
+  details { margin-top: 12px; } summary { cursor: pointer; color: var(--muted); font-size: 13.5px; }
+  #log { background: #0d0e12; border: 1px solid var(--line); border-radius: 8px; padding: 12px;
+         height: 260px; overflow: auto; font: 12.5px/1.45 Consolas, monospace; white-space: pre-wrap;
+         word-break: break-word; margin: 0; }
+  #status { font-weight: 600; }
+  #status.ok { color: var(--ok); } #status.error { color: var(--bad); } #status.run { color: var(--accent); }
+  .err { color: var(--bad); font-size: 13.5px; margin-top: 10px; min-height: 1em; }
+  footer { color: var(--muted); font-size: 12.5px; margin-top: 18px; }
+</style>
+</head>
+<body>
+<main>
+  <h1>NieR Re[in]carnation Offline Patcher</h1>
+  <p class="sub">Replaces the Google Colab step of the private server guide. Everything runs on this PC.</p>
+
+  <section>
+    <h2><span class="n">1</span>Setup</h2>
+    <p class="hint" id="setupHint">Checking&hellip;</p>
+    <ul class="comp" id="comp"></ul>
+    <div class="actions">
+      <button class="primary" id="btnSetup">Download what's missing</button>
+      <button id="btnUpdate" title="Get the newest patch scripts from the lunar-scripts project">Update patch scripts</button>
+    </div>
+  </section>
+
+  <section>
+    <h2><span class="n">2</span>Patch the APK</h2>
+    <p class="hint">Do this again whenever your server's IP address changes.</p>
+
+    <label>Original game APK (version 3.7.1)</label>
+    <div class="row file" data-slot="apk">
+      <button class="choose">Choose file&hellip;</button>
+      <span class="fname">No file chosen (or drop a file here)</span>
+      <input type="file" accept=".apk" hidden>
+    </div>
+
+    <label for="host">Server IP address</label>
+    <div class="row">
+      <input type="text" id="host" placeholder="192.168.1.50" spellcheck="false">
+      <button id="btnIp" title="List the addresses this PC has">Show this PC's addresses</button>
+    </div>
+    <p class="hint" style="margin:6px 0 0">Use the same address your server shows in step 3 of the guide. The game and the server must agree on it.</p>
+    <div class="chips" id="ips"></div>
+
+    <details>
+      <summary>Ports (leave these alone unless your server uses different ones)</summary>
+      <div class="ports">
+        <div><label for="gp">Game (gRPC)</label><input type="text" id="gp" value="8003" inputmode="numeric"></div>
+        <div><label for="hp">Assets (HTTP)</label><input type="text" id="hp" value="8080" inputmode="numeric"></div>
+        <div><label for="ap">Login (auth)</label><input type="text" id="ap" value="3000" inputmode="numeric"></div>
+      </div>
+      <label class="check"><input type="checkbox" id="useAuth" checked> Patch the in-game login button to use my auth server</label>
+    </details>
+
+    <div class="preview" id="preview"></div>
+    <div class="actions">
+      <button class="primary" id="btnApk">Patch APK</button>
+      <span class="hint" style="margin:0">Takes several minutes.</span>
+    </div>
+    <div class="err" id="errApk"></div>
+  </section>
+
+  <section>
+    <h2><span class="n">3</span>Patch the content tables</h2>
+    <p class="hint">Only needed once. It does not depend on your IP address.</p>
+    <label>Original 20240404193219.bin.e</label>
+    <div class="row file" data-slot="md">
+      <button class="choose">Choose file&hellip;</button>
+      <span class="fname">No file chosen (or drop a file here)</span>
+      <input type="file" accept=".e,.bin" hidden>
+    </div>
+    <div class="actions"><button class="primary" id="btnMd">Patch content tables</button></div>
+    <div class="err" id="errMd"></div>
+  </section>
+
+  <section>
+    <h2><span class="n">4</span>Check an APK <span style="color:var(--muted);font-weight:400">(troubleshooting)</span></h2>
+    <p class="hint">Inspects a patched APK. Add a second APK that you know works to see exactly what differs. Nothing is changed.</p>
+    <label>APK to check</label>
+    <div class="row file" data-slot="chkA">
+      <button class="choose">Choose file&hellip;</button>
+      <span class="fname">No file chosen (or drop a file here)</span>
+      <input type="file" accept=".apk" hidden>
+    </div>
+    <label>Compare with (optional, e.g. an APK patched on Colab that works)</label>
+    <div class="row file" data-slot="chkB">
+      <button class="choose">Choose file&hellip;</button>
+      <span class="fname">No file chosen (or drop a file here)</span>
+      <input type="file" accept=".apk" hidden>
+    </div>
+    <div class="actions"><button class="primary" id="btnChk">Check APK</button></div>
+    <div class="err" id="errChk"></div>
+  </section>
+
+  <section>
+    <h2>Progress <span id="status"></span></h2>
+    <pre id="log">Nothing has run yet.</pre>
+    <div class="actions">
+      <button id="btnCopy">Copy report</button>
+      <button id="btnOpen">Open output folder</button>
+      <button id="btnQuit">Quit patcher</button>
+    </div>
+  </section>
+
+  <footer>
+    Patched files go to the <b>output</b> folder next to the patcher. The patched APK contains your server
+    address, so share the patcher, not the APK. Patch scripts by the lunar-tear project.
+  </footer>
+</main>
+
+<script>
+const TOKEN = "__TOKEN__";
+const $ = id => document.getElementById(id);
+let since = 0, alive = true, ready = false;
+
+async function call(action, data) {
+  const r = await fetch("/api/" + action, {
+    method: "POST",
+    headers: {"Content-Type": "application/json", "X-Token": TOKEN},
+    body: JSON.stringify(data || {})
+  });
+  return r.json();
+}
+
+let jobRunning = false;
+function setBusy(busy) {
+  busy = busy || jobRunning || uploads > 0;
+  for (const id of ["btnSetup", "btnUpdate", "btnApk", "btnMd", "btnChk"]) $(id).disabled = busy;
+  for (const b of document.querySelectorAll(".choose")) b.disabled = busy;
+  if (!busy) {
+    $("btnApk").disabled = !ready;
+    $("btnMd").disabled = !ready;
+  }
+}
+
+function preview() {
+  const h = $("host").value.trim() || "<IP>";
+  let t = "game  " + h + ":" + $("gp").value.trim() + "\nassets " + h + ":" + $("hp").value.trim();
+  if ($("useAuth").checked) t += "\nlogin  " + h + ":" + $("ap").value.trim();
+  $("preview").textContent = t;
+  $("preview").style.whiteSpace = "pre";
+}
+
+async function poll() {
+  if (!alive) return;
+  let s;
+  try { s = await call("state", {since}); }
+  catch (e) {
+    alive = false;
+    $("status").textContent = "- patcher closed";
+    $("status").className = "error";
+    setBusy(true);
+    return;
+  }
+  const ul = $("comp"); ul.innerHTML = "";
+  let missing = 0;
+  for (const c of s.components) {
+    const li = document.createElement("li");
+    li.textContent = c.name; if (c.ok) li.className = "ok"; else missing++;
+    ul.appendChild(li);
+  }
+  ready = missing === 0;
+  $("setupHint").textContent = ready
+    ? "Everything is in place. The patcher works offline now."
+    : "First time: this downloads Java, Apktool, an APK signer and the patch scripts (about 75 MB) into the patcher's runtime folder. Needs internet once.";
+  $("btnSetup").style.display = ready ? "none" : "";
+
+  if (s.total < since) { since = 0; }
+  if (s.lines.length) {
+    const log = $("log");
+    if (since === 0) log.textContent = "";
+    log.textContent += s.lines.join("\n") + "\n";
+    log.scrollTop = log.scrollHeight;
+    since = s.total;
+  }
+  const st = $("status");
+  if (s.running) { st.textContent = "- working..."; st.className = "run"; }
+  else if (s.result === "ok") { st.textContent = "- finished"; st.className = "ok"; }
+  else if (s.result === "error") { st.textContent = "- failed"; st.className = "error"; }
+  jobRunning = s.running;
+  setBusy(s.running);
+  setTimeout(poll, s.running ? 700 : 2000);
+}
+
+async function start(action, data, errId) {
+  if (errId) $(errId).textContent = "";
+  since = 0; $("log").textContent = "";
+  const r = await call(action, data);
+  if (!r.ok && errId) $(errId).textContent = r.error;
+  else if (!r.ok) $("log").textContent = "ERROR: " + r.error;
+}
+
+$("btnSetup").onclick = () => start("setup", {});
+$("btnUpdate").onclick = () => start("setup", {update_scripts: true});
+$("btnApk").onclick = () => start("patch_apk", {
+  host: $("host").value, grpc_port: $("gp").value,
+  http_port: $("hp").value, auth_port: $("ap").value, use_auth: $("useAuth").checked
+}, "errApk");
+$("btnMd").onclick = () => start("patch_md", {}, "errMd");
+$("btnChk").onclick = () => start("check", {}, "errChk");
+$("btnCopy").onclick = async () => {
+  const text = $("log").textContent;
+  try { await navigator.clipboard.writeText(text); }
+  catch (e) {
+    const r = document.createRange(); r.selectNodeContents($("log"));
+    const sel = getSelection(); sel.removeAllRanges(); sel.addRange(r); document.execCommand("copy");
+  }
+  $("btnCopy").textContent = "Copied"; setTimeout(() => $("btnCopy").textContent = "Copy report", 1500);
+};
+$("btnOpen").onclick = () => call("open_output");
+$("btnQuit").onclick = async () => { await call("quit"); };
+$("btnIp").onclick = async () => {
+  const r = await call("detect_ip");
+  const box = $("ips"); box.innerHTML = "";
+  if (!r.ok || !r.ips.length) { box.textContent = "No network address found."; return; }
+  box.append(r.ips.length > 1 ? "This PC has several addresses. Pick the one your server shows:" : "This PC's address:");
+  for (const ip of r.ips) {
+    const b = document.createElement("button");
+    b.textContent = ip;
+    b.onclick = () => { $("host").value = ip; preview(); };
+    box.appendChild(b);
+  }
+};
+
+const ERR_FOR = {apk: "errApk", md: "errMd", chkA: "errChk", chkB: "errChk"};
+let uploads = 0;
+function mb(n) { return n >= 1048576 ? (n / 1048576).toFixed(1) + " MB" : Math.ceil(n / 1024) + " KB"; }
+function sendFile(row, file) {
+  const slot = row.dataset.slot, label = row.querySelector(".fname"), err = $(ERR_FOR[slot]);
+  err.textContent = "";
+  label.className = "fname set";
+  label.textContent = file.name + " - loading 0%";
+  uploads++; setBusy(true);
+  const x = new XMLHttpRequest();
+  x.open("POST", "/api/upload?slot=" + slot + "&name=" + encodeURIComponent(file.name));
+  x.setRequestHeader("X-Token", TOKEN);
+  x.upload.onprogress = e => {
+    if (e.lengthComputable) label.textContent = file.name + " - loading " + Math.floor(e.loaded * 100 / e.total) + "%";
+  };
+  const finish = (ok, msg) => {
+    uploads--; if (!uploads) setBusy(false);
+    if (ok) { label.textContent = file.name + " (" + mb(file.size) + ")"; }
+    else { label.className = "fname"; label.textContent = "No file chosen (or drop a file here)"; err.textContent = msg; }
+  };
+  x.onload = () => {
+    let r = {}; try { r = JSON.parse(x.responseText); } catch (e) {}
+    finish(!!r.ok, r.error || "Could not load the file.");
+  };
+  x.onerror = () => finish(false, "Could not load the file. Is the patcher window still open?");
+  x.send(file);
+}
+for (const row of document.querySelectorAll(".file")) {
+  const input = row.querySelector("input");
+  row.querySelector(".choose").onclick = () => input.click();
+  input.onchange = () => { if (input.files[0]) sendFile(row, input.files[0]); input.value = ""; };
+  row.ondragover = e => { e.preventDefault(); row.classList.add("over"); };
+  row.ondragleave = () => row.classList.remove("over");
+  row.ondrop = e => {
+    e.preventDefault(); row.classList.remove("over");
+    if (e.dataTransfer.files[0]) sendFile(row, e.dataTransfer.files[0]);
+  };
+}
+window.addEventListener("dragover", e => e.preventDefault());
+window.addEventListener("drop", e => e.preventDefault());
+for (const id of ["host", "gp", "hp", "ap", "useAuth"]) $(id).addEventListener("input", preview);
+preview();
+poll();
+</script>
+</body>
+</html>

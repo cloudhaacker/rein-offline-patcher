@@ -1,0 +1,5 @@
+# Keep Windows files exactly as committed (CRLF line endings matter for .bat).
+*.bat -text
+*.txt -text
+runtime/libs/** -text
+*.png binary
