@@ -3,3 +3,6 @@
 *.txt -text
 runtime/libs/** -text
 *.png binary
+
+# Not part of the downloadable zip.
+.github export-ignore

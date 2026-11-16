@@ -1,0 +1,29 @@
+# Publishes a GitHub Release whenever a version tag (v1.0.0, v1.1.0, ...) is pushed.
+# The zip is the repository contents at that tag; nothing is compiled.
+# The release text comes from docs/release-notes/<tag>.md.
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build the zip
+        run: git archive --format=zip --prefix=rein-offline-patcher/ HEAD -o "rein-offline-patcher-${GITHUB_REF_NAME}.zip"
+
+      - name: Create the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: >
+          gh release create "${GITHUB_REF_NAME}"
+          "rein-offline-patcher-${GITHUB_REF_NAME}.zip"
+          --title "${GITHUB_REF_NAME}"
+          --notes-file "docs/release-notes/${GITHUB_REF_NAME}.md"
