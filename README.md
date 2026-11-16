@@ -33,8 +33,9 @@ this tool downloads and runs unchanged. See [Credits](#credits).
 
 ## How to use it
 
-1. Download this repository (**Code > Download ZIP**) and unzip it somewhere
-   with a short path, for example `C:\NierPatcher`.
+1. Download the zip from the
+   [latest release](https://github.com/cloudhaacker/rein-offline-patcher/releases/latest)
+   and unzip it somewhere with a short path, for example `C:\NierPatcher`.
 2. Double-click **`Start Patcher.bat`**. A page opens in your web browser.
    Leave the black window open while you use it.
 3. **Setup:** click *Download what's missing* and wait for it to finish.
