@@ -1,9 +1,20 @@
-# Publishes a GitHub Release whenever a version tag (v1.0.0, v1.1.0, ...) is pushed.
-# The zip is the repository contents at that tag; nothing is compiled.
-# The release text comes from docs/release-notes/<tag>.md.
+# Publishes a GitHub Release.
+#
+# How to run it: on GitHub open the Actions tab, pick "Release" on the left,
+# click "Run workflow", type the version (for example v1.0.0) and confirm.
+# It also runs by itself if a version tag (v1.0.0, v1.1.0, ...) is pushed.
+#
+# The zip is the repository contents at that point; nothing is compiled.
+# The release text comes from docs/release-notes/<version>.md, which must exist.
 name: Release
 
 on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version to release, for example v1.0.0"
+        required: true
+        default: "v1.0.0"
   push:
     tags: ["v*"]
 
@@ -13,17 +24,28 @@ permissions:
 jobs:
   release:
     runs-on: ubuntu-latest
+    env:
+      VERSION: ${{ github.event.inputs.version || github.ref_name }}
     steps:
       - uses: actions/checkout@v4
 
+      - name: Check the version and its release notes
+        run: |
+          if ! echo "$VERSION" | grep -Eq '^v[0-9]+\.[0-9]+\.[0-9]+$'; then
+            echo "Version must look like v1.0.0 (got: $VERSION)"; exit 1
+          fi
+          if [ ! -f "docs/release-notes/$VERSION.md" ]; then
+            echo "Missing docs/release-notes/$VERSION.md"; exit 1
+          fi
+
       - name: Build the zip
-        run: git archive --format=zip --prefix=rein-offline-patcher/ HEAD -o "rein-offline-patcher-${GITHUB_REF_NAME}.zip"
+        run: git archive --format=zip --prefix=rein-offline-patcher/ HEAD -o "rein-offline-patcher-$VERSION.zip"
 
       - name: Create the release
         env:
           GH_TOKEN: ${{ github.token }}
-        run: >
-          gh release create "${GITHUB_REF_NAME}"
-          "rein-offline-patcher-${GITHUB_REF_NAME}.zip"
-          --title "${GITHUB_REF_NAME}"
-          --notes-file "docs/release-notes/${GITHUB_REF_NAME}.md"
+        run: |
+          gh release create "$VERSION" "rein-offline-patcher-$VERSION.zip" \
+            --target "$GITHUB_SHA" \
+            --title "$VERSION" \
+            --notes-file "docs/release-notes/$VERSION.md"
